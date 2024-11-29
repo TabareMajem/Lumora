@@ -1,0 +1,144 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String         @id @default(uuid())
+  username      String         @unique
+  email         String         @unique
+  passwordHash  String
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  assessments   PsychologicalAssessment[]
+  recommendations Recommendation[]
+  feedback      UserFeedback[]
+  ratings       Rating[]
+
+  @@map("users")
+}
+
+model PsychologicalAssessment {
+  id           String   @id @default(uuid())
+  userId       String
+  assessmentType String
+  scores       String
+  completedAt  DateTime @default(now())
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("psychological_assessments")
+}
+
+model Media {
+  id            String    @id @default(uuid())
+  title         String
+  type          String
+  genres        String
+  plotSummary   String
+  releaseDate   DateTime
+  ratings       Float
+  platforms     String
+  coverImageUrl String
+  trailerUrl    String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  game          Game?
+  filmSeries    FilmSeries?
+  awards        Award[]
+  recommendations Recommendation[]
+  feedback      UserFeedback[]
+  userRatings   Rating[]
+
+  @@map("media")
+}
+
+model Rating {
+  id          String   @id @default(uuid())
+  userId      String
+  mediaId     String
+  type        String   // FILM, SERIES, or GAME
+  scores      String   // JSON string containing detailed category scores
+  comment     String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  media       Media    @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, mediaId])
+  @@map("ratings")
+}
+
+model Game {
+  id                  String  @id @default(uuid())
+  mediaId             String  @unique
+  steamId             String? @unique
+  rawgId              String? @unique
+  igdbId              String? @unique
+  gameplayMechanics   String
+  storytellingNarrative String
+  visualAudioDesign   String
+  replayability       String
+  difficulty          String
+  socialInteraction   String
+  playerAgency        String
+  innovation          String
+  immersion          String
+  media               Media   @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+
+  @@map("games")
+}
+
+model FilmSeries {
+  id           String  @id @default(uuid())
+  mediaId      String  @unique
+  imdbId       String? @unique
+  omdbId       String? @unique
+  tmdbId       String? @unique
+  episodeCount Int?
+  seasonCount  Int?
+  media        Media   @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+
+  @@map("films_series")
+}
+
+model Award {
+  id       String  @id @default(uuid())
+  name     String
+  year     Int
+  category String
+  mediaId  String
+  winner   Boolean
+  media    Media   @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+
+  @@map("awards")
+}
+
+model Recommendation {
+  id            String   @id @default(uuid())
+  userId        String
+  mediaId       String
+  score         Float
+  recommendedAt DateTime @default(now())
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  media         Media    @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+
+  @@map("recommendations")
+}
+
+model UserFeedback {
+  id          String   @id @default(uuid())
+  userId      String
+  mediaId     String
+  feedbackType String
+  rating      Int?
+  comment     String?
+  providedAt  DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  media       Media    @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+
+  @@map("user_feedback")
+}
